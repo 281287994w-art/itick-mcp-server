@@ -64,6 +64,28 @@ python3 -m itick_mcp_server
 }
 ```
 
+## OpenCode
+
+完整步骤（虚拟环境、配置文件路径、`opencode mcp` CLI、超时与排错）见 **[docs/opencode.md](docs/opencode.md)**。
+
+OpenCode 使用 `opencode.json` / `opencode.jsonc` 的 `mcp` 键，本地服务需将 `type` 设为 `"local"`，`command` 为字符串数组，环境变量放在 `environment` 中（与 Cursor 的 `mcpServers` / `env` 不同）。最小示例：
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "itick": {
+      "type": "local",
+      "command": ["itick-mcp"],
+      "enabled": true,
+      "environment": {
+        "ITICK_TOKEN": "your_token"
+      }
+    }
+  }
+}
+```
+
 ## MCP 工具一览（53）
 
 与 [REST 文档](https://docs.itick.org/) 路径对应：
