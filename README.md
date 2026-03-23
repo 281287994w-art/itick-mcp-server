@@ -37,13 +37,43 @@ FIX 仅机构开放时，可联系官方客服：[Telegram @iticksupport](https:
 
 ## Setup
 
+### 方式一：一键安装（推荐）
+
+```bash
+cd itick-mcp-server
+chmod +x install.sh
+./install.sh
+```
+
+安装脚本会自动：
+- ✓ 检查 Python 环境（需要 3.10+）
+- ✓ 创建虚拟环境（可选）
+- ✓ 安装依赖
+- ✓ 配置环境变量
+- ✓ 验证安装
+
+### 方式二：手动安装
+
 ```bash
 cd itick-mcp-server
 pip install -e .
 # 若只有 python3：pip3 install -e .
 ```
 
-环境变量：
+### 快速配置
+
+使用配置工具自动生成各平台配置文件：
+
+```bash
+python3 setup_config.py
+```
+
+支持配置的平台：
+- ✨ Cursor
+- ✨ Claude Desktop  
+- ✨ OpenCode
+
+### 手动配置环境变量
 
 | 变量 | 说明 |
 |------|------|
