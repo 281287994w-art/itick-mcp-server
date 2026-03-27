@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 from pydantic import Field
 
-from itick_mcp_server import texts
-from itick_mcp_server.client import itick_get
+from client import itick_get
+from texts import *
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
@@ -21,12 +21,12 @@ def register_rest_tools(mcp: "FastMCP") -> None:
 
 
 _ASSETS = [
-    ("stock", "stock", texts.REGION_STOCK),
-    ("crypto", "crypto", texts.REGION_CRYPTO),
-    ("forex", "forex", texts.REGION_FOREX),
-    ("indices", "indices", texts.REGION_INDICES),
-    ("future", "future", texts.REGION_FUTURE),
-    ("fund", "fund", texts.REGION_FUND),
+    ("stock", "stock", REGION_STOCK),
+    ("crypto", "crypto", REGION_CRYPTO),
+    ("forex", "forex", REGION_FOREX),
+    ("indices", "indices", REGION_INDICES),
+    ("future", "future", REGION_FUTURE),
+    ("fund", "fund", REGION_FUND),
 ]
 
 
@@ -37,7 +37,7 @@ def _register_basics(mcp: "FastMCP") -> None:
     )
     def symbol_list(
         asset_type: str = Field(
-            description=f"{texts.SYMBOL_TYPE}（REST 查询参数名 type）",
+            description=f"{SYMBOL_TYPE}（REST 查询参数名 type）",
         ),
         region: str = Field(description="市场区域代码"),
         code: str | None = Field(default=None, description="可选，产品代码筛选"),
@@ -66,7 +66,7 @@ def _register_stock_extras(mcp: "FastMCP") -> None:
         asset_type: str = Field(
             description="市场类型（REST 参数 type），如 stock",
         ),
-        region: str = Field(description=texts.REGION_STOCK),
+        region: str = Field(description=REGION_STOCK),
         code: str = Field(description="股票代码"),
     ) -> str:
         return itick_get(
@@ -82,7 +82,7 @@ def _register_stock_extras(mcp: "FastMCP") -> None:
         ipo_kind: str = Field(
             description="REST 参数 type：upcoming=待上市，recent=新近上市",
         ),
-        region: str = Field(description=texts.REGION_STOCK),
+        region: str = Field(description=REGION_STOCK),
     ) -> str:
         return itick_get("/stock/ipo", {"type": ipo_kind, "region": region})
 
@@ -91,7 +91,7 @@ def _register_stock_extras(mcp: "FastMCP") -> None:
         description="股票：拆股/复权等调整因子列表（GET /stock/split）",
     )
     def stock_split(
-        region: str = Field(description=texts.REGION_STOCK),
+        region: str = Field(description=REGION_STOCK),
     ) -> str:
         return itick_get("/stock/split", {"region": region})
 
@@ -141,7 +141,7 @@ def _register_asset_family(
     def single_kline(
         region: str = Field(description=region_desc),
         code: str = Field(description="产品代码"),
-        k_type: int = Field(description=texts.KTYPE),
+        k_type: int = Field(description=KTYPE),
         et: int | None = Field(
             default=None,
             description="截止毫秒时间戳；不传则默认当前",
@@ -164,7 +164,7 @@ def _register_asset_family(
     )
     def batch_ticks(
         region: str = Field(description=region_desc),
-        codes: str = Field(description=texts.CODES_BATCH),
+        codes: str = Field(description=CODES_BATCH),
     ) -> str:
         return itick_get(f"{base}/ticks", {"region": region, "codes": codes})
 
@@ -174,7 +174,7 @@ def _register_asset_family(
     )
     def batch_quotes(
         region: str = Field(description=region_desc),
-        codes: str = Field(description=texts.CODES_BATCH),
+        codes: str = Field(description=CODES_BATCH),
     ) -> str:
         return itick_get(f"{base}/quotes", {"region": region, "codes": codes})
 
@@ -184,7 +184,7 @@ def _register_asset_family(
     )
     def batch_depths(
         region: str = Field(description=region_desc),
-        codes: str = Field(description=texts.CODES_BATCH),
+        codes: str = Field(description=CODES_BATCH),
     ) -> str:
         return itick_get(f"{base}/depths", {"region": region, "codes": codes})
 
@@ -194,8 +194,8 @@ def _register_asset_family(
     )
     def batch_klines(
         region: str = Field(description=region_desc),
-        codes: str = Field(description=texts.CODES_BATCH),
-        k_type: int = Field(description=texts.KTYPE),
+        codes: str = Field(description=CODES_BATCH),
+        k_type: int = Field(description=KTYPE),
         limit: int | None = Field(default=None, description="每个标的返回条数"),
         et: int | None = Field(
             default=None,
