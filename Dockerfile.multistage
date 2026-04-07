@@ -1,0 +1,54 @@
+# ============================================
+# 多阶段构建 - 使用 uv 加速构建 (Python 3.14)
+# ============================================
+
+# 阶段 1: 构建依赖
+FROM python:3.14-slim AS builder
+
+WORKDIR /app
+
+# 安装 uv
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gcc \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && ln -s /root/.local/bin/uv /usr/local/bin/uv
+
+# 复制依赖文件
+COPY pyproject.toml requirements.txt ./
+
+# 使用 uv 创建虚拟环境并安装依赖
+RUN uv venv /app/.venv && \
+    . /app/.venv/bin/activate && \
+    uv pip install --no-cache-dir -r requirements.txt
+
+# ============================================
+# 阶段 2: 运行环境
+# ============================================
+FROM python:3.14-slim AS runtime
+
+WORKDIR /app
+
+# 设置环境变量
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/app/.venv/bin:$PATH" \
+    VIRTUAL_ENV="/app/.venv" \
+    ITICK_API_BASE=https://api.itick.org
+
+# 从构建阶段复制虚拟环境
+COPY --from=builder /app/.venv /app/.venv
+
+# 复制项目文件
+COPY . .
+
+# 暴露 HTTP 端口
+EXPOSE 8000
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+
+# 默认以 HTTP 模式启动
+CMD ["python", "server.py", "--transport", "http"]

@@ -4,7 +4,7 @@ services:
   itick-mcp-server:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.multistage  # 使用多阶段构建，镜像更小
     container_name: itick-mcp-server
     ports:
       - "8000:8000"
