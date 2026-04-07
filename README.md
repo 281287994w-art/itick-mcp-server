@@ -81,6 +81,11 @@ export ITICK_TOKEN="your_token"
 ```bash
 itick-mcp
 # 或
+# http方式启动
+python3 -m itick_mcp_server  --transport http
+# sse方式启动
+python3 -m itick_mcp_server  --transport sse
+# stdio方式启动
 python3 -m itick_mcp_server
 ```
 

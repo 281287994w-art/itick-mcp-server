@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  itick-mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: itick-mcp-server
+    ports:
+      - "8000:8000"
+    environment:
+      # iTick API 配置
+      - ITICK_API_BASE=${ITICK_API_BASE:-https://api.itick.org}
+      # 默认 token（可选，也可以在请求 header 中传递）
+      - ITICK_TOKEN=${ITICK_TOKEN:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - itick-network
+
+networks:
+  itick-network:
+    driver: bridge
