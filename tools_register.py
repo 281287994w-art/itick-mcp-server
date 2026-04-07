@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from mcp.server.fastmcp import Context
 from pydantic import Field
 
 from client import itick_get
+from config import TRANSPORT_MODE
 from texts import *
 
 if TYPE_CHECKING:
@@ -30,6 +32,25 @@ _ASSETS = [
 ]
 
 
+def _extract_token(ctx: Context) -> str | None:
+    """从请求 header 中提取 token。"""
+    try:
+        if ctx.request_context and ctx.request_context.request:
+            # 尝试多种常见的 token header 名称
+            for header_name in ["token", "ITICK_TOKEN"]:
+                token = ctx.request_context.request.headers.get(header_name)
+                if token:
+                    return token.strip()
+    except Exception:
+        pass
+    return None
+
+
+def _get_is_stdio() -> bool:
+    """判断当前是否为 stdio 模式。"""
+    return TRANSPORT_MODE == "stdio"
+
+
 def _register_basics(mcp: "FastMCP") -> None:
     @mcp.tool(
         name="symbolList",
@@ -41,10 +62,14 @@ def _register_basics(mcp: "FastMCP") -> None:
         ),
         region: str = Field(description="市场区域代码"),
         code: str | None = Field(default=None, description="可选，产品代码筛选"),
+        ctx: Context = None,
     ) -> str:
+        token = _extract_token(ctx)
         return itick_get(
             "/symbol/list",
             {"type": asset_type, "region": region, "code": code},
+            token=token,
+            is_stdio=_get_is_stdio(),
         )
 
     @mcp.tool(
@@ -53,8 +78,10 @@ def _register_basics(mcp: "FastMCP") -> None:
     )
     def symbol_holidays(
         code: str = Field(description="国家/地区代码，如 HK、US"),
+        ctx: Context = None,
     ) -> str:
-        return itick_get("/symbol/v2/holidays", {"code": code})
+        token = _extract_token(ctx)
+        return itick_get("/symbol/v2/holidays", {"code": code}, token=token, is_stdio=_get_is_stdio())
 
 
 def _register_stock_extras(mcp: "FastMCP") -> None:
@@ -68,10 +95,14 @@ def _register_stock_extras(mcp: "FastMCP") -> None:
         ),
         region: str = Field(description=REGION_STOCK),
         code: str = Field(description="股票代码"),
+        ctx: Context = None,
     ) -> str:
+        token = _extract_token(ctx)
         return itick_get(
             "/stock/info",
             {"type": asset_type, "region": region, "code": code},
+            token=token,
+            is_stdio=_get_is_stdio(),
         )
 
     @mcp.tool(
@@ -83,8 +114,10 @@ def _register_stock_extras(mcp: "FastMCP") -> None:
             description="REST 参数 type：upcoming=待上市，recent=新近上市",
         ),
         region: str = Field(description=REGION_STOCK),
+        ctx: Context = None,
     ) -> str:
-        return itick_get("/stock/ipo", {"type": ipo_kind, "region": region})
+        token = _extract_token(ctx)
+        return itick_get("/stock/ipo", {"type": ipo_kind, "region": region}, token=token, is_stdio=_get_is_stdio())
 
     @mcp.tool(
         name="stockSplit",
@@ -92,8 +125,10 @@ def _register_stock_extras(mcp: "FastMCP") -> None:
     )
     def stock_split(
         region: str = Field(description=REGION_STOCK),
+        ctx: Context = None,
     ) -> str:
-        return itick_get("/stock/split", {"region": region})
+        token = _extract_token(ctx)
+        return itick_get("/stock/split", {"region": region}, token=token, is_stdio=_get_is_stdio())
 
 
 def _register_asset_family(
@@ -111,8 +146,10 @@ def _register_asset_family(
     def single_tick(
         region: str = Field(description=region_desc),
         code: str = Field(description="产品代码"),
+        ctx: Context = None,
     ) -> str:
-        return itick_get(f"{base}/tick", {"region": region, "code": code})
+        token = _extract_token(ctx)
+        return itick_get(f"{base}/tick", {"region": region, "code": code}, token=token, is_stdio=_get_is_stdio())
 
     @mcp.tool(
         name=f"{tool_prefix}Quote",
@@ -121,8 +158,10 @@ def _register_asset_family(
     def single_quote(
         region: str = Field(description=region_desc),
         code: str = Field(description="产品代码"),
+        ctx: Context = None,
     ) -> str:
-        return itick_get(f"{base}/quote", {"region": region, "code": code})
+        token = _extract_token(ctx)
+        return itick_get(f"{base}/quote", {"region": region, "code": code}, token=token, is_stdio=_get_is_stdio())
 
     @mcp.tool(
         name=f"{tool_prefix}Depth",
@@ -131,8 +170,10 @@ def _register_asset_family(
     def single_depth(
         region: str = Field(description=region_desc),
         code: str = Field(description="产品代码"),
+        ctx: Context = None,
     ) -> str:
-        return itick_get(f"{base}/depth", {"region": region, "code": code})
+        token = _extract_token(ctx)
+        return itick_get(f"{base}/depth", {"region": region, "code": code}, token=token, is_stdio=_get_is_stdio())
 
     @mcp.tool(
         name=f"{tool_prefix}Kline",
@@ -150,13 +191,15 @@ def _register_asset_family(
             default=None,
             description="返回条数",
         ),
+        ctx: Context = None,
     ) -> str:
         params: dict = {"region": region, "code": code, "kType": k_type}
         if et is not None:
             params["et"] = et
         if limit is not None:
             params["limit"] = limit
-        return itick_get(f"{base}/kline", params)
+        token = _extract_token(ctx)
+        return itick_get(f"{base}/kline", params, token=token, is_stdio=_get_is_stdio())
 
     @mcp.tool(
         name=f"{tool_prefix}Ticks",
@@ -165,8 +208,10 @@ def _register_asset_family(
     def batch_ticks(
         region: str = Field(description=region_desc),
         codes: str = Field(description=CODES_BATCH),
+        ctx: Context = None,
     ) -> str:
-        return itick_get(f"{base}/ticks", {"region": region, "codes": codes})
+        token = _extract_token(ctx)
+        return itick_get(f"{base}/ticks", {"region": region, "codes": codes}, token=token, is_stdio=_get_is_stdio())
 
     @mcp.tool(
         name=f"{tool_prefix}Quotes",
@@ -175,8 +220,10 @@ def _register_asset_family(
     def batch_quotes(
         region: str = Field(description=region_desc),
         codes: str = Field(description=CODES_BATCH),
+        ctx: Context = None,
     ) -> str:
-        return itick_get(f"{base}/quotes", {"region": region, "codes": codes})
+        token = _extract_token(ctx)
+        return itick_get(f"{base}/quotes", {"region": region, "codes": codes}, token=token, is_stdio=_get_is_stdio())
 
     @mcp.tool(
         name=f"{tool_prefix}Depths",
@@ -185,8 +232,10 @@ def _register_asset_family(
     def batch_depths(
         region: str = Field(description=region_desc),
         codes: str = Field(description=CODES_BATCH),
+        ctx: Context = None,
     ) -> str:
-        return itick_get(f"{base}/depths", {"region": region, "codes": codes})
+        token = _extract_token(ctx)
+        return itick_get(f"{base}/depths", {"region": region, "codes": codes}, token=token, is_stdio=_get_is_stdio())
 
     @mcp.tool(
         name=f"{tool_prefix}Klines",
@@ -201,10 +250,12 @@ def _register_asset_family(
             default=None,
             description="截止毫秒时间戳；不传则默认当前",
         ),
+        ctx: Context = None,
     ) -> str:
         params: dict = {"region": region, "codes": codes, "kType": k_type}
         if et is not None:
             params["et"] = et
         if limit is not None:
             params["limit"] = limit
-        return itick_get(f"{base}/klines", params)
+        token = _extract_token(ctx)
+        return itick_get(f"{base}/klines", params, token=token, is_stdio=_get_is_stdio())
